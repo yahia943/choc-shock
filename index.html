@@ -71,7 +71,7 @@
     font-family: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
     font-weight: 700; font-size: clamp(1.25rem, 6.2vw, 1.7rem); line-height: 1.15; color: var(--red); max-width: 92%;
   }
-  .prize .kicker { font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+  .prize .tier { padding: 3px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .prize .reward {
     margin-top: 4px; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: .95rem;
     background: var(--gold); color: #4a2a17; border: 2px solid #4a2a17;
@@ -150,7 +150,7 @@
   <div class="card-wrap">
     <div class="ticket" id="ticket">
       <div class="prize" id="prize" aria-live="polite">
-        <div class="kicker">Your challenge</div>
+        <div class="tier" id="tier"></div>
         <div class="emoji" id="emoji">🍪</div>
         <div class="label" id="label">&nbsp;</div>
         <div class="reward" id="reward"></div>
@@ -173,24 +173,299 @@
 
 <script>
 (function () {
-  // ---- Challenges: edit the text, reward or weight (higher weight = shown more often) ----
-  var PRIZES = [
-    { id: "naruto",  emoji: "🍥", challenge: "Take a photo with a Naruto cosplayer",            reward: "Free cookie",    weight: 16 },
-    { id: "goku",    emoji: "💥", challenge: "Strike your best Kamehameha pose and snap it",    reward: "Free cookie",    weight: 16 },
-    { id: "pikachu", emoji: "⚡", challenge: "Find a Pikachu and take a selfie with them",      reward: "Free cookie",    weight: 14 },
-    { id: "run",     emoji: "🏃", challenge: "Film yourself doing the Naruto run",              reward: "Free cookie",    weight: 14 },
-    { id: "story",   emoji: "📸", challenge: "Post a story with your cookie and tag @choc.shock", reward: "Free cookie",  weight: 16 },
-    { id: "powerup", emoji: "🔥", challenge: "Film yourself shouting CHOC-SHOCK like an anime power-up", reward: "Free cookie", weight: 10 },
-    { id: "three",   emoji: "🤳", challenge: "Take a photo with 3 different cosplayers",        reward: "2 cookies free", weight: 8 },
-    { id: "hold",    emoji: "🍪", challenge: "Get a cosplayer to pose holding a Choc-Shock cookie", reward: "2 cookies free", weight: 6 }
-  ];
-  var STORE_KEY = "chocshock-challenge-v1";
+  // ---- Levels: reward and how often each level shows up (higher weight = more common) ----
+  var TIERS = {
+    easy:       { label: "Easy",       reward: "20% off",        weight: 45, bg: "#2e9b5a", fg: "#ffffff" },
+    medium:     { label: "Medium",     reward: "50% off",        weight: 30, bg: "#f6b645", fg: "#4a2a17" },
+    hard:       { label: "Hard",       reward: "Free cookie",    weight: 18, bg: "#e5192b", fg: "#ffffff" },
+    impossible: { label: "Impossible", reward: "2 cookies free", weight: 7,  bg: "#3a1f6e", fg: "#ffffff" }
+  };
+  // ---- Challenges per level: [emoji, text]. Add, remove or edit freely. ----
+  var LIST = {
+ "easy": [
+  [
+   "🍥",
+   "Take a photo with a Naruto cosplayer"
+  ],
+  [
+   "💥",
+   "Strike your best Kamehameha pose and snap it"
+  ],
+  [
+   "🏃",
+   "Film yourself doing the Naruto run"
+  ],
+  [
+   "📸",
+   "Post a story with your cookie and tag @choc.shock"
+  ],
+  [
+   "🔥",
+   "Film yourself shouting CHOC-SHOCK like an anime power-up"
+  ],
+  [
+   "🧥",
+   "Find someone in a red outfit and take a photo together"
+  ],
+  [
+   "🤪",
+   "Take a photo of the funniest cosplay you can find"
+  ],
+  [
+   "⚔️",
+   "Take a photo with someone holding a sword, wand or other prop"
+  ],
+  [
+   "😎",
+   "Do your best Gojo pose and snap it"
+  ],
+  [
+   "🐉",
+   "Film a Dragon Ball power-up scream"
+  ],
+  [
+   "🥷",
+   "Do the Naruto hand sign for a jutsu and film it"
+  ],
+  [
+   "😈",
+   "Do a villain laugh in front of the booth"
+  ],
+  [
+   "🦸",
+   "Strike a hero pose with a cookie in your hand"
+  ],
+  [
+   "🐌",
+   "Film a slow-motion cookie bite, like an anime scene"
+  ],
+  [
+   "➕",
+   "Follow @choc.shock and show the cashier"
+  ],
+  [
+   "💌",
+   "Share our page with a friend and show the message"
+  ],
+  [
+   "#️⃣",
+   "Use #ChocShock in a post about the event"
+  ],
+  [
+   "🧠",
+   "Name 5 anime characters in 10 seconds"
+  ],
+  [
+   "👯",
+   "Bring a friend and take a photo of you both with cookies"
+  ],
+  [
+   "🎭",
+   "Wear an anime headband, ears or mask and take a photo"
+  ],
+  [
+   "🗣️",
+   "Say CHOC-SHOCK in your deepest villain voice and film it"
+  ],
+  [
+   "⚡",
+   "Pose like a cookie hit by lightning with wild hair"
+  ],
+  [
+   "👀",
+   "Have an epic stare-down with your cookie"
+  ],
+  [
+   "😱",
+   "Take a selfie with the most shocked face you can make"
+  ],
+  [
+   "🎤",
+   "Introduce your cookie to a friend like it's a celebrity"
+  ],
+  [
+   "💃",
+   "Do the silliest 5-second dance with no music"
+  ],
+  [
+   "🏷️",
+   "Name your cookie after an anime character and introduce it"
+  ],
+  [
+   "👻",
+   "Take a photo as a cookie ghost with a napkin over your head"
+  ]
+ ],
+ "medium": [
+  [
+   "⚡",
+   "Find a Pikachu and take a selfie with them"
+  ],
+  [
+   "🤳",
+   "Take a photo with 3 different cosplayers"
+  ],
+  [
+   "🏴‍☠️",
+   "Take a photo with a Luffy cosplayer"
+  ],
+  [
+   "🕷️",
+   "Take a photo with a Spider-Man cosplayer"
+  ],
+  [
+   "🌙",
+   "Take a photo with a Sailor Moon cosplayer"
+  ],
+  [
+   "🗡️",
+   "Take a photo with a Demon Slayer cosplayer"
+  ],
+  [
+   "😮",
+   "Take a group photo with 5 people, all making a shocked face"
+  ],
+  [
+   "💀",
+   "Act out an anime death scene in 10 seconds"
+  ],
+  [
+   "🎬",
+   "Post a reel of your anime pose and tag @choc.shock"
+  ],
+  [
+   "⭐",
+   "Film a 15-second video review of your cookie"
+  ],
+  [
+   "✏️",
+   "Draw the Choc-Shock cookie on a napkin"
+  ],
+  [
+   "🎨",
+   "Guess the anime from a drawing the cashier shows you"
+  ],
+  [
+   "🥷",
+   "Do a ninja run to the booth in front of everyone"
+  ],
+  [
+   "🌍",
+   "Give a dramatic speech to your cookie, the last cookie on Earth"
+  ],
+  [
+   "😭",
+   "Do a dramatic anime cry because the cookie is so good"
+  ],
+  [
+   "✨",
+   "Film an anime transformation with spinning and shouting"
+  ],
+  [
+   "🎥",
+   "Do a slow-motion run toward the booth while someone films you"
+  ],
+  [
+   "🧙",
+   "Talk to your cookie like a sensei and film it giving advice"
+  ],
+  [
+   "💪",
+   "Do an I'm-the-strongest pose with a friend looking terrified behind you"
+  ],
+  [
+   "📰",
+   "Film a breaking-news report about your first cookie bite"
+  ],
+  [
+   "🤺",
+   "Duel a friend with cookie swords and film the 5-second battle"
+  ]
+ ],
+ "hard": [
+  [
+   "🍪",
+   "Get a cosplayer to pose holding a Choc-Shock cookie"
+  ],
+  [
+   "✊",
+   "Beat the cashier at rock, paper, scissors"
+  ],
+  [
+   "📣",
+   "Get 3 strangers to say CHOC-SHOCK on video"
+  ],
+  [
+   "😂",
+   "Make a cosplayer laugh and film it"
+  ],
+  [
+   "🤭",
+   "Make the cashier laugh in 10 seconds without touching them"
+  ],
+  [
+   "🕵️",
+   "Walk like a ninja to the counter without the cashier spotting you"
+  ],
+  [
+   "🤹",
+   "Balance a cookie on your head for 5 seconds and film it"
+  ],
+  [
+   "💘",
+   "Compliment the cashier like you're confessing in an anime"
+  ]
+ ],
+ "impossible": [
+  [
+   "🌟",
+   "Take a photo with 10 different cosplayers"
+  ],
+  [
+   "🍥",
+   "Get Naruto, Goku and Pikachu cosplayers into one photo"
+  ],
+  [
+   "📢",
+   "Get 10 strangers to shout CHOC-SHOCK in one video"
+  ],
+  [
+   "🏆",
+   "Beat the cashier at rock, paper, scissors 3 times in a row"
+  ],
+  [
+   "🥷",
+   "Do the ninja run with a cookie balanced on your head"
+  ],
+  [
+   "⚡",
+   "Recreate the Choc-Shock logo pose with 3 cosplayers in one photo"
+  ],
+  [
+   "🎞️",
+   "Film a 30-second anime opening with 5 people and 5 poses"
+  ],
+  [
+   "🤣",
+   "Get the cashier and a cosplayer to laugh in the same video"
+  ]
+ ]
+};
+  var PRIZES = [];
+  Object.keys(LIST).forEach(function (k) {
+    LIST[k].forEach(function (c, i) {
+      PRIZES.push({ id: k + i, tier: k, emoji: c[0], challenge: c[1], reward: TIERS[k].reward });
+    });
+  });
+  var STORE_KEY = "chocshock-challenge-v2";
 
   function pickPrize() {
-    var total = PRIZES.reduce(function (s, p) { return s + p.weight; }, 0);
-    var r = Math.random() * total;
-    for (var i = 0; i < PRIZES.length; i++) { r -= PRIZES[i].weight; if (r <= 0) return PRIZES[i]; }
-    return PRIZES[0];
+    var keys = Object.keys(TIERS);
+    var total = keys.reduce(function (s, k) { return s + TIERS[k].weight; }, 0);
+    var r = Math.random() * total, tier = keys[0];
+    for (var i = 0; i < keys.length; i++) { r -= TIERS[keys[i]].weight; if (r <= 0) { tier = keys[i]; break; } }
+    var pool = PRIZES.filter(function (p) { return p.tier === tier; });
+    return pool[Math.floor(Math.random() * pool.length)];
   }
   function makeCode() {
     var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
@@ -213,6 +488,10 @@
   $("emoji").textContent = prize.emoji;
   $("label").textContent = prize.challenge;
   $("reward").textContent = "🎁 Win: " + prize.reward;
+  var tr = TIERS[prize.tier];
+  $("tier").textContent = tr.label + " challenge";
+  $("tier").style.background = tr.bg;
+  $("tier").style.color = tr.fg;
 
   var canvas = $("foil"), ctx = canvas.getContext("2d", { willReadFrequently: true });
   var W = 0, H = 0, dpr = 1, done = false, drawing = false, lastCheck = 0;
